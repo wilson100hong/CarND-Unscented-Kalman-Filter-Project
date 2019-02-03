@@ -1,8 +1,11 @@
 #ifndef UKF_H
 #define UKF_H
+#include <fstream>
 
 #include "Eigen/Dense"
 #include "measurement_package.h"
+
+using namespace std;
 
 class UKF {
  public:
@@ -95,6 +98,15 @@ class UKF {
 
   // Sigma point spreading parameter
   double lambda_;
+
+  // Measurement noise
+  Eigen::MatrixXd R_laser_;
+  Eigen::MatrixXd R_radar_;
+
+  // NIS output files
+  ofstream nis_laser_;
+  ofstream nis_radar_;
 };
+
 
 #endif  // UKF_H

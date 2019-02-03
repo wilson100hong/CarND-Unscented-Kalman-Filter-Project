@@ -1,44 +1,21 @@
-# Unscented Kalman Filter Project Starter Code
+# Unscented Kalman Filter Project Writeup
 Self-Driving Car Engineer Nanodegree Program
 
-In this project utilize an Unscented Kalman Filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
+---
 
-This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases).
+[//]: # (Image References)
 
-This repository includes two files that can be used to set up and intall [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. Please see the uWebSocketIO Starter Guide page in the classroom within the EKF Project lesson for the required version and installation scripts.
-
-Once the install for uWebSocketIO is complete, the main program can be built and ran by doing the following from the project top directory.
-
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./UnscentedKF
-
-Tips for setting up your environment can be found in the classroom lesson for the EKF project.
-
-Note that the programs that need to be written to accomplish the project are src/ukf.cpp, src/ukf.h, tools.cpp, and tools.h
-
-The program main.cpp has already been filled out, but feel free to modify it.
-
-Here is the main protocol that main.cpp uses for uWebSocketIO in communicating with the simulator.
-
-
-INPUT: values provided by the simulator to the c++ program
-
-["sensor_measurement"] => the measurment that the simulator observed (either lidar or radar)
-
-
-OUTPUT: values provided by the c++ program to the simulator
-
-["estimate_x"] <= kalman filter estimated position x
-["estimate_y"] <= kalman filter estimated position y
-["rmse_x"]
-["rmse_y"]
-["rmse_vx"]
-["rmse_vy"]
+[image1]: ./images/data1_all.png "Dataset 1 - All Sensors"
+[image2]: ./images/data1_laser.png "Dataset 1 - Laser"
+[image3]: ./images/data1_radar.png "Dataset 1 - Radar"
+[image4]: ./images/data2.png "Dataset 2 - All Sensors"
+[image5]: ./images/nis_laser.png "Dataset 1 - NIS Laser"
+[image6]: ./images/nis_radar.png "Dataset 1 - NIS Radar"
 
 ---
+
+## Starter code
+* [Udacity repo] (https://github.com/udacity/CarND-Unscented-Kalman-Filter-Project)
 
 ## Other Important Dependencies
 * cmake >= 3.5
@@ -59,33 +36,108 @@ OUTPUT: values provided by the c++ program to the simulator
 3. Compile: `cmake .. && make`
 4. Run it: `./UnscentedKF`
 
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
 ## Code Style
 
 Please stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html) as much as possible.
 
-## Generating Additional Data
+## Project Rubrics
 
-This is optional!
+### Accuracy
+1. px, py, vx, vy output coordinates must have an RMSE <= [.09, .10, .40, .30] when using the file: "obj_pose-laser-radar-synthetic-input.txt" which is the same data file the simulator uses for Dataset 1.
 
-If you'd like to generate your own radar and lidar data, see the
-[utilities repo](https://github.com/udacity/CarND-Mercedes-SF-Utilities) for
-Matlab scripts that can generate additional data.
+* The RMSE of dataset #1 at step 499 is in range
 
-## Project Instructions and Rubric
+    | Variable | RMSE   |
+    |----------|--------|
+    | px       | 0.0692 |
+    | py       | 0.0805 |
+    | vx       | 0.3248 |
+    | vy       | 0.2383 |
 
-This information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see the project page in the classroom
-for instructions and the project rubric.
+![Screenshot][image1]
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
+* The RMSE of dataset #2 at step 498 has `vx` out of range though
+
+    | Variable | RMSE   |
+    |----------|--------|
+    | px       | 0.0690 |
+    | py       | 0.0683 |
+    | vx       | 0.5625 |
+    | vy       | 0.2089 |
+
+![Screenshot][image4]
+
+
+### Follows the Correct Algorithm
+1. Your Sensor Fusion algorithm follows the general processing flow as taught in the preceding lessons.
+Yes it follows the steps introduced from the course: predict then update measurement.
+
+2. Your Kalman Filter algorithm handles the first measurements appropriately.
+Yes in `ukf.cpp`, if the filter is not initialized, it will only update the state `x_` and `time_us`,
+according to the types of sensor.
+
+3. Your Kalman Filter algorithm first predicts then updates.
+Yes in `ukf.cpp` function `ProcessMeasurement()`, it calls `Prediction()` and then `UpdateRadar()` or `UpdateLidar()`.
+
+4. Your Kalman Filter can handle radar and lidar measurements.
+Yes the filter will apply unscented transform to radar measurement. For lidar measurement, since the transform in linear,
+I use same procedure as in normal KF. The experiment results shows same RMSE.
+
+
+### Sensors Comparison
+I compare the RMSE when only enabling radar or lidar. Both of them has worse RMSE than full UKF.
+
+* The RMSE of dataset #1 when only use radar:
+
+    | Variable | RMSE   |
+    |----------|--------|
+    | px       | 0.0692 |
+    | py       | 0.0805 |
+    | vx       | 0.3248 |
+    | vy       | 0.2383 |
+
+![Screenshot][image3]
+
+* The RMSE of dataset #1 when only use lidar:
+
+    | Variable | RMSE   |
+    |----------|--------|
+    | px       | 0.1506 |
+    | py       | 0.2131 |
+    | vx       | 0.3658 |
+    | vy       | 0.2648 |
+
+![Screenshot][image2]
+
+### NIS Analytics
+I tune the noises:
+
+ | Noise     | value|
+ |-----------|------|
+ | std_a     | 1.5  |
+ | std_yawdd | 0.5  |
+
+The dataset #1 NIS values are under `data/`
+
+1. Radar 
+
+    | Percentile | Value  |
+    |------------|--------|
+    | 95%        | 7.2879 |
+    | 5%         | 0.2682 |
+ 
+![Screenshot][image6]
+ 
+2. Laser
+ 
+    | Percentile | Value  |
+    |------------|--------|
+    | 95%        | 4.6738 |
+    | 5%         | 0.1319 |
+ 
+![Screenshot][image5]
+
+
+### Bonus challenge
+See [https://github.com/wilson100hong/CarND-Catch-Run-Away-Car-UKF](https://github.com/wilson100hong/CarND-Catch-Run-Away-Car-UKF)
